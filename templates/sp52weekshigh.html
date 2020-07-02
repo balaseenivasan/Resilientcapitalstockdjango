@@ -11,7 +11,7 @@
 {% block body_block %}
 <div class="page-title">
                         <h1>
-                            % of S&P 500 members above their 50 dma
+                            % of S&P 500 members at a 52 week high
                         </h1>
 </div>
 <div id="container" style="height: 100%; width:90%";position:absolute;></div>
@@ -21,7 +21,7 @@
 <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
 <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
 <script>
-const timezone = new Date().getTimezoneOffset()
+ const timezone = new Date().getTimezoneOffset()
   Highcharts.setOptions({
     global: {
         timezoneOffset: timezone
@@ -44,7 +44,7 @@ const timezone = new Date().getTimezoneOffset()
             selected: 2
         },
       title: {
-          text: '% of S&P 500 members above their 50 dma'
+          text: '% of S&P 500 members at a 52 week high'
       },
        xAxis: {
 
@@ -94,8 +94,8 @@ const timezone = new Date().getTimezoneOffset()
           yAxis: 1,
           xAxis:0,
           y :-30,
-          name: '% of S&P 500 members above their 50 dma',
-          data: {{ dma50_series | safe }},
+          name: '% of S&P 500 members at a 52 week high',
+          data: {{ dma200_series | safe }},
           color: 'red',
           showInLegend:true,
           tooltip: {

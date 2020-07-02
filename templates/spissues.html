@@ -9,13 +9,7 @@
 {% endblock %}
 
 {% block body_block %}
-<div class="page-title">
-                        <h1>
-                            % of S&P 500 members above their 50 dma
-                        </h1>
-</div>
-<div id="container" style="height: 100%; width:90%";position:absolute;></div>
-
+<div id="container"></div>
 <script src="https://code.highcharts.com/stock/highstock.js"></script>
 <script src="https://code.highcharts.com/stock/modules/data.js"></script>
 <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
@@ -38,13 +32,12 @@ const timezone = new Date().getTimezoneOffset()
       credits: {
       enabled: false
     },
-
       rangeSelector: {
             allButtonsEnabled: true,
             selected: 2
         },
       title: {
-          text: '% of S&P 500 members above their 50 dma'
+          text: 'S&P 500 Up Issues Ratio'
       },
        xAxis: {
 
@@ -58,11 +51,6 @@ const timezone = new Date().getTimezoneOffset()
             year: '%Y'
         },
     },
-    tooltip: {
-        xDateFormat: '%Y-%m-%d',
-        shared: true
-    },
-
 
       yAxis: [{
         lineWidth: 0,
@@ -94,8 +82,8 @@ const timezone = new Date().getTimezoneOffset()
           yAxis: 1,
           xAxis:0,
           y :-30,
-          name: '% of S&P 500 members above their 50 dma',
-          data: {{ dma50_series | safe }},
+          name: 'SPUpIssuesRadio',
+          data: {{ dma200_series | safe }},
           color: 'red',
           showInLegend:true,
           tooltip: {

@@ -9,7 +9,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from resilientcapitalapp.models import SpNasdaqDmaData,SpNasdaq200DmaData
+from resilientcapitalapp.models import SpNasdaqDmaData,SpNasdaq200DmaData,SpIssuesData,SpRsi,\
+        SpBollingerbands,Spnewhighlow,SPcorrection,SPbearmarket,NasdaqDmaData,Nasdaq200DmaData,NasdaqIssuesData,NasdaqRsi,NasdaqBollingerbands,Nasdaqnewhighlow
+
 import csv
 import numpy as np
 import yfinance as yf
@@ -80,7 +82,9 @@ def save_datas(request):
     with open('SpNasdaqdmaData - SP50.csv') as csvfile:
          reader = csv.DictReader(csvfile)
          for row in reader:
-             p = SpNasdaq200DmaData(date=pd.to_datetime(row['Date'], infer_datetime_format=True), sp500=row['S&P 500'],dma200=row['% of S&P 500 members above their 200 dma'])
+             p = SPbearmarket(date=pd.to_datetime(row['Date'], infer_datetime_format=True), sp500=row['S&P 500'],
+                              Spbearmarket=row['% of S&P 500 members in a bear market']
+                                  )
 
              p.save()
 
@@ -110,7 +114,7 @@ def my_view(request, *args, **kwargs):
         i += 1
         name = t.text_content()
         col.append((name, []))
-    for j in range(2, len(tr_elements)):
+    for j in range(1, len(tr_elements)):
         # T is our j'th row
         T = tr_elements[j]
 
@@ -139,7 +143,7 @@ def my_view(request, *args, **kwargs):
     [len(C) for (title, C) in col]
     Dict = {title: column for (title, column) in col}
     df = pd.DataFrame(Dict)
-    col_one_list = df["Symbol\n"].tolist()
+    col_one_list = df["MMM\n"].tolist()
     splist = []
 
     for element in col_one_list:
@@ -189,9 +193,11 @@ def my_view(request, *args, **kwargs):
     row200 = [yesterday1, sp500_ret, SPabove200]
     row50 = [yesterday1, sp500_ret, SPabove50]
     date = pd.to_datetime(yesterday1, infer_datetime_format=True)
-    #if (yesterday1 != sheetlastdate):
-        #SpNasdaqDmaData.objects.create(date=yesterday1, sp500=sp500_ret, dma50=SPabove200)
-    #SpNasdaqDmaData.objects.create(date = date, sp500 = sp500_ret, dma50 = SPabove50)
+    po = SpNasdaqDmaData.objects.latest('date')
+    print(po.date)
+    if (date != po.date):
+        SpNasdaqDmaData.objects.create(date=date, sp500=sp500_ret, dma50=SPabove200)
+        SpNasdaqDmaData.objects.create(date = date, sp500 = sp500_ret, dma50 = SPabove50)
 
     #sp500 = 336
     #dma50 = 54.02
@@ -275,9 +281,592 @@ def plot_view200dma(request):
     values1 = dma200_series
 
     data = [[d, v] for d, v in zip(dates, values)]
+    print(data)
     data1 = [[d, v] for d, v in zip(dates, values1)]
 
     return render(request, 'sp200dma.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+
+def plot_spissuesview(request):
+    dataset  = SpIssuesData.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SPUpIssuesRadio)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'spissues.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sprsi70view(request):
+    dataset  = SpRsi.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SPRsi70)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sprsi70.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma50_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sprsi30view(request):
+    dataset  = SpRsi.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SPRsi30)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sprsi30.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma50_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_spupperbolingerview(request):
+    dataset  = SpBollingerbands.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SPupperBollingerBand)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'spupperbolinger.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_splowerbolingerview(request):
+    dataset  = SpBollingerbands.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SPlowerBollingerBand)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'splowerbolinger.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sp52weekshighview(request):
+    dataset  = Spnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SP52weekhigh)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sp52weekshigh.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sp52weekslowview(request):
+    dataset  = Spnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SP52weeklow)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sp52weekslow.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sphighlowview(request):
+    dataset  = Spnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SPSPhighlow)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sphighlow.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sp24weekshighview(request):
+    dataset  = Spnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SP24weekhigh)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sp24weekshigh.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_sp24weekslowview(request):
+    dataset  = Spnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.SP24weeklow)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'sp24weekslow.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_spcorrectionview(request):
+    dataset  = SPcorrection.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.Spcorrection)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'spcorrection.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_spbearmarketview(request):
+    dataset  = SPbearmarket.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.sp500)
+        dma200_series.append(entry.Spbearmarket)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'spbearmarket.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_view50dma(request):
+    dataset  = NasdaqDmaData.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.dma50)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    print(data)
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaq50dma.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaq200dmaview(request):
+    dataset  = Nasdaq200DmaData.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.dma200)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    print(data)
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaq200dma.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaqissuesview(request):
+    dataset  = NasdaqIssuesData.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.nasdaqUpIssuesRadio)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    print(data)
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaqissues.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaqrsi70view(request):
+    dataset  = NasdaqRsi.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.NasdaqRsi70)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    print(data)
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaqrsi70.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaqrsi30view(request):
+    dataset  = NasdaqRsi.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.NasdaqRsi30)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    print(data)
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaqrsi30.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaqupperbolingerview(request):
+    dataset  = NasdaqBollingerbands.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.NasdaqupperBollingerBand)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'spupperbolinger.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaqplowerbolingerview(request):
+    dataset  = NasdaqBollingerbands.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.NasdaqlowerBollingerBand)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'splowerbolinger.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaq52weekshighview(request):
+    dataset  = Nasdaqnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.Nasdaq52weekhigh)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaq52weekshigh.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaq52weekslowview(request):
+    dataset  = Nasdaqnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.Nasdaq52weeklow)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaq52weekslow.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaqhighlowview(request):
+    dataset  = Nasdaqnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.Nasdaqhighlow)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaqhighlow.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaq24weekshighview(request):
+    dataset  = Nasdaqnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.Nasdaq24weekhigh)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaq24weekshigh.html', {
+        'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
+        'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
+    })
+def plot_nasdaq24weekslowview(request):
+    dataset  = Nasdaqnewhighlow.objects.all().order_by('date')
+
+    date = list()
+    sp500_series = list()
+    dma200_series = list()
+    for entry in dataset:
+        mydate = datetime.strptime(str(entry.date), '%Y-%m-%d')
+
+        timestamp = datetime.timestamp(mydate)
+        date.append(timestamp *1000)
+        sp500_series.append(entry.nasdaq100)
+        dma200_series.append(entry.Nasdaq24weeklow)
+    dates = date
+    values = sp500_series
+    values1 = dma200_series
+
+    data = [[d, v] for d, v in zip(dates, values)]
+    data1 = [[d, v] for d, v in zip(dates, values1)]
+
+    return render(request, 'nasdaq24weekslow.html', {
         'sp500_series': json.dumps(data,sort_keys=False,default=json_serial),
         'dma200_series': json.dumps(data1,sort_keys=False,default=json_serial)
     })
